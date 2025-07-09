@@ -1,4 +1,3 @@
-import useAuth from "../Auth/SupabaseAuthProvider";
 import supabase from "../Services/supabaseClient";
  
  export async function DeleteUserFromRoom(roomToken, userID){

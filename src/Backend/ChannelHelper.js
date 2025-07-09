@@ -1,4 +1,5 @@
 //HELPER FUNCTIONS FOR CHANNELS
+import { createSignal } from "solid-js";
 
 export const [leaderboardUpdated, setLeaderboardUpdated] = createSignal(false);
 export const [UserCoordsUpdate, setUserCoordsUpdate] = createSignal(false);

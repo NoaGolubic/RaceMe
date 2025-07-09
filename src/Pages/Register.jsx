@@ -162,7 +162,7 @@ function Registracija(props) {
               </button>
               <p className="text-sm font-light text-gray-400">
                 Već imate račun?{' '}
-                <A href="/prijava" className="font-medium hover:underline text-primary-500">
+                <A href="/Prijava" className="font-medium hover:underline text-primary-500">
                   Prijavite se ovdje.
                 </A>
               </p>

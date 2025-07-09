@@ -1,7 +1,7 @@
 import { createSignal } from 'solid-js';
 import { useNavigate } from '@solidjs/router'; 
-import supabase from '../Services/supabaseClient';
-import { useAuth } from '../Auth/SupabaseAuthProvider';
+import supabase from "../Services/supabaseClient";
+
 
 function Prijava(props) {
     const [email, setEmail] = createSignal('');
@@ -11,8 +11,6 @@ function Prijava(props) {
     const [rememberMe, setRememberMe] = createSignal(false);
     
     const navigate = useNavigate();
-    const session = useAuth();
-
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -28,7 +26,9 @@ function Prijava(props) {
             if (error) {
                 setError('Neispravni podaci za prijavu.');
                 console.log(error.message);
-            } 
+            } else{
+                navigate("/Pocetna");
+            }
         } catch (err) {
             setError('Došlo je do pogreške pri prijavi.');
             console.error(err);
