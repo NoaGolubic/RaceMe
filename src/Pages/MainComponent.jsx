@@ -76,7 +76,7 @@ const session = useAuth();
 
   //SPEECHAPI MOZDA STAVITI U ASYNC
   let PaceNote;
-  let PaceNoteReading = new SpeechSynthesisUtterance(text);
+  let PaceNoteReading = new SpeechSynthesisUtterance();
   let voices = speechSynthesis.getVoices();
   PaceNoteReading.voice = voices.find(voice => voice.name === "Google US English" && voice.lang === "en-US");
   PaceNoteReading.pitch = 1.2;
@@ -462,6 +462,7 @@ const session = useAuth();
 
       clearInterval(x);
       clearInterval(y);
+      acl.stop();
     }
 
 
@@ -475,16 +476,20 @@ const session = useAuth();
       <audio id="Dominating" src="MATERIJALI_ZA_PROBU/Dominating.mp3"></audio>
       <audio id="WickedSick" src="MATERIJALI_ZA_PROBU/WickedSick.mp3"></audio>
       <div>
-        <h1>StopWatch</h1>
+        <h1 class="flex justify-center items-center text-2xl font-bold text-black mb-8 mt-8">StopWatch</h1>
+        <div class="place-items-center grid h-16 grid-cols-3 text-xl font-bold text-black">
         <div><h3>{Math.floor(stopWatchValue() / 3600)} h</h3></div>
         <div><h3>{Math.floor((stopWatchValue() % 3600) / 60)} m</h3></div>
         <div><h3>{stopWatchValue() % 60} s</h3></div>
+        </div>
       </div>
 
       <div>
-        <h1>G-Force</h1>
-        <div><h3>{GForce()} g</h3></div>
+        <h1 class="flex justify-center items-center text-2xl font-bold text-black mb-8 mt-12">G-Force</h1>
+        <div class="place-items-center grid h-16 text-xl font-bold text-black"><h3>{GForce()} g</h3></div>
       </div>
+
+ <div id="map"></div>
 
       <Show when={raceFinished()}>
         <div>
@@ -537,25 +542,29 @@ const session = useAuth();
 
       </Show>
       <Show when={!inRoom()}>
-        <h1 class="text-center text-4xl font-bold text-black mb-6">Join a room!</h1>
+        <h1 class="mt-8 text-center text-2xl font-bold text-black mb-6">Join a room!</h1>
         <form onSubmit={JoinRoom} class="flex flex-col gap-4">
           <div class="flex text-black flex-col">
-            <label>Room Code:</label>
-            <input type="text" name="EnteredRoomCode" required class="p-2 rounded-md border border-gray-300" />
+            <label class="font-bold mb-2 ml-12">Room Code:</label>
+            <input type="text" name="EnteredRoomCode" required class="p-2 rounded-md border max-w-100  ml-12 border-gray-300" />
           </div>
-          <button type="submit" class="mt-4 bg-slate-600 text-white p-2 rounded-md hover:bg-slate-700">
+          <button type="submit" class="mt-16 bg-slate-600 text-white p-2 rounded-md w-100 self-center hover:bg-slate-700">
             Join
           </button>
         </form>
-        <h1 class="text-center text-4xl font-bold text-black mb-6">Or create one!</h1>
+        <h1 class="text-center text-2xl font-bold text-black mb-6 mt-8">Or create one!</h1>
+        <div class="flex justify-center items-baseline">
         <input type="text" id="ShowRoomCode" placeholder="XXXX-XXXX" disabled="true"></input>
         <button id="CreatButton" onClick={CreateARoom} class="mt-4 bg-slate-600 text-white p-2 rounded-md hover:bg-slate-700">Create</button>
+    </div>
       </Show>
 
       {/*<button id="profile" class="mt-4 bg-slate-600 text-white p-2 rounded-md hover:bg-slate-700">Profile</button>*/}
 
       <Show when={inRoom()}>
-        <button id="LeaveButton" onClick={LeaveRoom} class="mt-4 bg-slate-600 text-white p-2 rounded-md hover:bg-slate-700">Leave</button>
+        <div class="flex justify-center">
+        <button id="LeaveButton" onClick={LeaveRoom} class="mt-12 bg-slate-600 text-white p-2 rounded-md hover:bg-slate-700">Leave</button>
+        </div>
       </Show>
     </>
   );
