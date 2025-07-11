@@ -6,6 +6,7 @@ import supabase from "../Services/supabaseClient";
         .delete()
         .eq("UserID", userID)
         .eq("EntryCode", roomToken);
+        console.log(userID, roomToken);
     if(error) {
       alert("Couldnt leave a room propertly!");
     }
@@ -14,28 +15,31 @@ import supabase from "../Services/supabaseClient";
 export async function InsertCreatedRoom(finishLat, finishLng, roomToken, username, userID, currentLat, currentLng) {
     const { error } = await supabase
         .from('room')
-        .insert({ FinishLineLat: finishLat, FinishLineLng: finishLng, EntryCode: roomToken, Username: username, UserID: userID, CurrentUserLat: currentLat, CurrentUserLng: currentLng })
+        .insert({ FinishLineLat: finishLat, FinishLineLong: finishLng, EntryCode: roomToken, Username: username, UserID: userID, CurrentUserLat: currentLat, CurrentUserLng: currentLng })
 if(error){
     console.log("ERROR INSERTING A NEW ROOM IN DB", error);
 }
     }
 
-export async function InsertUserInRoom(username, userID, currentLat, currentLng, roomToken){
+export async function InsertUserInRoom(username, userID, currentLat, currentLng, roomToken, finLat, finLng ){
 const { error } = await supabase
         .from('room')
-        .insert({ Username: username, UserID: userID, CurrentUserLat: currentLat, CurrentUserLng: currentLng, EntryCode: roomToken })
+        .insert({ Username: username, UserID: userID, CurrentUserLat: currentLat, CurrentUserLng: currentLng, EntryCode: roomToken, FinishLineLat: finLat, FinishLineLong: finLng })
       if (error) {
         console.log("ERROR DATABASE INSERT DURING JOIN", error);
       }
+    }
 
-        const { data, Error } = await supabase
+      export async function GetRoomFinishLine(roomToken){
+const { data , Error } = await supabase
         .from("room")
-        .select("FinishLineLat", "FinishLineLng")
+        .select("FinishLineLat, FinishLineLong")
         .eq("EntryCode", roomToken);
       if (Error) {
         console.log("ERROR ADDING FINISHLINE COORDS",Error);
         return [];
       }
+
       return data;
 }
 

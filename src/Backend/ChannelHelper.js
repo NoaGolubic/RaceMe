@@ -1,5 +1,6 @@
 //HELPER FUNCTIONS FOR CHANNELS
 import { createSignal } from "solid-js";
+import supabase from "../Services/supabaseClient";
 
 export const [leaderboardUpdated, setLeaderboardUpdated] = createSignal(false);
 export const [UserCoordsUpdate, setUserCoordsUpdate] = createSignal(false);
