@@ -5,7 +5,7 @@
 //Slozen Supabse Backend
 //Dodan leaderboards za room
 
-import { createSignal, onMount, createEffect, Show } from "solid-js";
+import { createSignal, onMount, createEffect, Show, onCleanup } from "solid-js";
 import L, { control, icon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-routing-machine";
@@ -24,14 +24,15 @@ export default function coDriver() {
   const [userLon, setUserLon] = createSignal(null);
   const [stopWatchValue, setStopWatchValue] = createSignal(0);
   const [raceFinished, setRaceFinished] = createSignal(false);
-  const [stopWatchStarted, setStopWatchStarted] = createSignal(false);
   const [startLat, setStartLat] = createSignal(0);
   const [startLon, setStartLon] = createSignal(0);
   const [inRoom, setInRoom] = createSignal(false);
   const [instructionWaSpoken, setInstructionWasSpoken] = createSignal(false);
   const [loopOnce, setLoopOnce] = createSignal(true);
   const [stop, setStop] = createSignal(false);
-   const [instructionRoute, setInstructionRoute] = createSignal([]);
+  const [instructionRoute, setInstructionRoute] = createSignal([]);
+  const [speedSig, setSpeed] = createSignal(0);
+  const [distanceToFinishLine, setDistanceToFinishLine] = createSignal(0);
 
   let AccelerationData;
   let SpeedArray = [];
@@ -56,7 +57,7 @@ export default function coDriver() {
   let map;
   let route;
   let routeLogic;
- // var instructionRoute
+  // var instructionRoute
   let instructionIndexArray = [];
 
   const session = useAuth();
@@ -105,12 +106,12 @@ export default function coDriver() {
   //MAKIVANJE KANALA, GASENJE STOPERICA, CISCENJE MAPE, BRISANJE IZ SOBE
   //POSLOZITI SCOPE
   async function LeaveRoom() {
-     if (routeLogic) {
-            map.removeControl(routeLogic);
-          }
-           if (route) {
-            map.removeControl(route);
-          }
+    if (routeLogic) {
+      map.removeControl(routeLogic);
+    }
+    if (route) {
+      map.removeControl(route);
+    }
     clearInterval(x);
     clearInterval(y);
     finishMarkersGroup.clearLayers();
@@ -156,15 +157,15 @@ export default function coDriver() {
       const count = await countUserRoomEntries(EnteredRoomCode);
       //data?
       if (count > 0) {
-           if (routeLogic) {
-            map.removeControl(routeLogic);
-          }
-           if (route) {
-            map.removeControl(route);
-          }
+        if (routeLogic) {
+          map.removeControl(routeLogic);
+        }
+        if (route) {
+          map.removeControl(route);
+        }
         finishMarkersGroup.clearLayers();
-       const data = await GetRoomFinishLine(EnteredRoomCode);
-       await InsertUserInRoom(session().user?.user_metadata?.username, session().user.id, userLat(), userLon(), EnteredRoomCode, data[0].FinishLineLat, data[0].FinishLineLong );
+        const data = await GetRoomFinishLine(EnteredRoomCode);
+        await InsertUserInRoom(session().user?.user_metadata?.username, session().user.id, userLat(), userLon(), EnteredRoomCode, data[0].FinishLineLat, data[0].FinishLineLong);
         setFinishLat(data[0].FinishLineLat);
         setFinishLong(data[0].FinishLineLong);
         //TREBA SLOZITY POLICY NA USERA
@@ -186,7 +187,7 @@ export default function coDriver() {
     UserWatchId = navigator.geolocation.watchPosition(UserWatch);
 
     let mapa = document.getElementById("map");
-   
+
 
     if (map) {
       map.remove();
@@ -219,7 +220,7 @@ export default function coDriver() {
     });
 
 
-    createEffect(() => {
+    createEffect(async () => {
 
       if (leaderboardUpdated()) {
         const leaderboardsEntry = Array.from(rankUser.keys()).pop();
@@ -254,10 +255,11 @@ export default function coDriver() {
       }
 
 
+
       if (NewCoords()) {
 
         //LOGIČKA RUTA
-        if ((NewCoords() || instructionWaSpoken())  && finishLat() && finishLong() && userLat() && userLon()) {
+        if ((NewCoords() || instructionWaSpoken()) && finishLat() && finishLong() && userLat() && userLon()) {
           if (routeLogic) {
             map.removeControl(routeLogic);
           }
@@ -269,20 +271,30 @@ export default function coDriver() {
             lineOptions: {
               styles: [{ color: 'transparent', opacity: 0, weight: 0 }],
               addWaypoints: false
-            },createMarker: function() { return null; }
+            }, createMarker: function () { return null; }
           })
             .on('routeselected', function (e) {
               instruction = e.route.instructions;
             })
             .on('routesfound', function (e) {
               var routes = e.routes;
-             setInstructionRoute(routes[0].instructions);
+              if (instructionIndexArray.length > 0) {
+                const filteredInstr = routes[0].instructions.filter(
+                  item => !instructionIndexArray.includes(item.index)
+                );
+                setInstructionRoute(filteredInstr);
+              } else {
+                setInstructionRoute(routes[0].instructions);
+              }
             })
             .addTo(map);
 
           const routingControlContainer = routeLogic.getContainer();
           const controlContainerParent = routingControlContainer.parentNode;
           controlContainerParent.removeChild(routingControlContainer);
+
+          console.log("OVO JE RUTA::", instructionRoute());
+
         }
         userMarkersGroup.clearLayers();
         L.marker([userLat(), userLon()], { icon: Player_icon })
@@ -309,61 +321,229 @@ export default function coDriver() {
         if (route) {
           map.removeControl(route);
         }
-      
+
         route = L.Routing.control({
           waypoints: [
             L.latLng([startLat(), startLon()]),
             L.latLng([finishLat(), finishLong()])
           ], lineOptions: {
-              addWaypoints: false
-            },createMarker: function() { return null; }
+            addWaypoints: false
+          }, createMarker: function () { return null; }
         }).on('routeselected', function (e) {
           instruction = e.route.instructions;
-        }) .on('routesfound', function (e) {
+        }).on('routesfound', function (e) {
           //UZIMA SE SVEUKUONO VRIJEME OD TOČKE A DO TOČKE B
-              var routes = e.routes;
-              var summary = routes[0].summary;
-              totalTime = summary.totalTime;
-            }).addTo(map);
+          var routes = e.routes;
+          var summary = routes[0].summary;
+          totalTime = summary.totalTime;
+        }).addTo(map);
 
         const routingControlContainer = route.getContainer();
         const controlContainerParent = routingControlContainer.parentNode;
         controlContainerParent.removeChild(routingControlContainer);
         setStop(false);
 
-        
-          if (startLat() && startLon()) {
-        L.marker([startLat(), startLon()], { icon: Start_icon })
-          .bindPopup("Start line");
-      }
+
+        if (startLat() && startLon()) {
+          L.marker([startLat(), startLon()], { icon: Start_icon })
+            .bindPopup("Start line");
+        }
       }
       // }
+
+      //POKRETANJE UTRKE
+      if (!raceFinished() && !instructionWaSpoken() && instructionRoute().length > 0 && speedSig() > -1) {
+        console.log("Zadovoljeni uvjeti za ulaz u pokretanje trke");
+
+        function CodriverSpeech(text, time) {
+          setInstructionWasSpoken(true);
+          PaceNoteReading.text = text;
+
+          setTimeout(() => {
+            speechSynthesis.speak(PaceNoteReading);
+            PaceNoteReading.onend = () => {
+              // setInstructionRoute(prev => prev.slice(1));
+              setInstructionWasSpoken(false);
+              console.log("Izgovorilo se", text);
+            };
+          }, time);
+        }
+
+        // setInstructionWasSpoken(false);
+        let currentInstruction = instructionRoute()[0];
+        let directionShout = currentInstruction.modifier;
+        let distance = currentInstruction.distance;
+        let timeDelaySpeech = distance / speedSig() * 1000;
+        let instructionIndex = currentInstruction.index;
+
+        console.log(currentInstruction);
+
+        if (!instructionIndexArray.includes(instructionIndex) || instructionIndexArray.length === 0) {
+          instructionIndexArray.push(instructionIndex);
+          console.log("ARRAY ZA PROVJERU INDEXA", instructionIndexArray);
+          switch (directionShout) {
+
+            case "Left":
+              PaceNote = distance + "m!" + "left 3!";
+              CodriverSpeech(PaceNote, timeDelaySpeech);
+              break;
+
+            case "Right":
+              PaceNote = distance + "m!" + "right 3!";
+              CodriverSpeech(PaceNote, timeDelaySpeech);
+              break;
+
+            case "Straight":
+              PaceNote = distance + "m!" + "flat out!";
+              CodriverSpeech(PaceNote, timeDelaySpeech);
+              break;
+
+            case "SlightRight":
+              PaceNote = distance + "m!" + "right 4!";
+              CodriverSpeech(PaceNote, timeDelaySpeech);
+              break;
+
+            case "SharpRight":
+              PaceNote = distance + "m!" + "right 2!";
+              CodriverSpeech(PaceNote, timeDelaySpeech);
+              break;
+
+            case "SharpLeft":
+              PaceNote = distance + "m!" + "left 2!";
+              CodriverSpeech(PaceNote, timeDelaySpeech);
+              break;
+
+            case "SlightLeft":
+              PaceNote = distance + "m!" + "left 4!";
+              CodriverSpeech(PaceNote, timeDelaySpeech);
+              break;
+
+            case "TurnAround":
+            case "Uturn":
+              PaceNote = distance + "m!" + "turn around!";
+              CodriverSpeech(PaceNote, timeDelaySpeech);
+              break;
+
+            default:
+              PaceNote = "Flat out!";
+              CodriverSpeech(PaceNote, timeDelaySpeech);
+              break;
+          }
+
+        }
+
+      }
+
+
+      if ((distanceToFinishLine() < 0.0000001) && finishLat() && finishLong()) {
+        setRaceFinished(true);
+        setNewCoords(false);
+        let SpeedArrayLenght = SpeedArray.length;
+        let HeadingArrayLenght = HeadingArray.length - 1;
+        let AccelerationArrayLenght = AccerationArray.length - 1;
+        instructionIndexArray = [];
+
+        let sumAcc = 0;
+        for (let i = 1; i < AccelerationArrayLenght; i++) {
+          sumAcc += Math.abs(AccerationArray[i] - AccerationArray[i - 1]);
+        }
+
+        let sumSpe = 0;
+        SpeedArray.forEach(numSpe => {
+          sumSpe += numSpe;
+        });
+
+
+        let sumHea = 0;
+        for (let i = 1; i < HeadingArrayLenght; i++) {
+          let checkWrapp = 0;
+          checkWrapp = Math.abs(HeadingArray[i] - HeadingArray[i - 1]);
+          if (checkWrapp < 180) {
+            sumHea += checkWrapp;
+          } else {
+            sumHea += Math.abs(360 - checkWrapp);
+          }
+        }
+
+
+        CalcAccDif = sumAcc / AccelerationArrayLenght;
+        CalcHeaDif = sumHea / HeadingArrayLenght;
+        CalcSpeAvg = sumSpe / SpeedArrayLenght;
+        MaxSpeed = Math.max(...SpeedArray);
+
+        //Izvući broj trenutačnih prolaznika
+        const count = await countUserRoomEntries(token);
+        // data ?? 0 
+        countPlayers = (count ?? 0) + 1;
+
+        let UserFinishTime = Math.floor(stopWatchValue() / 3600) + ":" + Math.floor((stopWatchValue() % 3600) / 60) + ":" + stopWatchValue() % 60;
+
+        await AddUserToLeaderboard(UserFinishTime, count, MaxSpeed, session().user?.user_metadata?.username, token);
+
+        //PITATI ZA CAR TOP SPEED kod reg i spremiti u metadata
+        TrackHardnessFactor = (CalcAccDif * 0.5) + (CalcHeaDif * 0.4) + (CalcSpeAvg /* / carTopSpeed */ * 0.1);
+
+        //U SEKUNDAMA
+        TimeGradeConstant = totalTime / stopWatchValue();
+
+
+        if (TimeGradeConstant > 1.2) {
+          document.getElementById('Badge').innerHTML += '<img src="src/Assets/HDBadge.jpg" height="300" width="300"></img>';
+          var audio = document.getElementById("BottomFeeder");
+          audio.play();
+        }
+        else if (TimeGradeConstant < 1.2 && TimeGradeConstant >= 0.9) {
+          document.getElementById('Badge').innerHTML += '<img src="src/Assets/SBadge.jpg" height="300" width="300"></img>';
+          var audio = document.getElementById("Slay");
+          audio.play();
+        }
+
+        else if (TimeGradeConstant < 0.9 && TimeGradeConstant >= 0.5) {
+          document.getElementById('Badge').innerHTML += '<img src="src/Assets/DBadge.jpg" height="300" width="300"></img>';
+          var audio = document.getElementById("Dominating");
+          audio.play();
+        }
+
+        else {
+          document.getElementById('Badge').innerHTML += '<img src="src/Assets/WSBadge.jpg" height="300" width="300"></img>';
+          var audio = document.getElementById("WickedSick");
+          audio.play();
+        }
+
+        alert("Došli ste do cilja!");
+
+        navigator.geolocation.clearWatch(UserWatchId);
+
+        clearInterval(x);
+        clearInterval(y);
+        acl.stop();
+      }
     });
   });
 
   //PROVJERIT JEL SE SVE DOHVACA
-  async function UserWatch(pos) {
+ /* async*/ function UserWatch(pos) {
 
     const { accuracy, latitude, longitude, heading, speed } = pos.coords;
     acl.start();
 
     setUserLat(latitude);
     setUserLon(longitude);
+    setSpeed(speed);
 
 
     let DistToFinishLine = Math.sqrt(Math.pow(finishLat() - latitude, 2) + Math.pow(finishLong() - longitude, 2));
+    setDistanceToFinishLine(DistToFinishLine);
     if (DistToFinishLine > 0.0001) {
-      SpeedArray.push(speed);
-      HeadingArray.push(heading);
+      if (loopOnce()) {
+        setStop(true);
+        setStartLat(latitude);
+        setStartLon(longitude);
+      }
 
-      //AKO SE KORISNIK DOVOLJNO BRZO KREĆE I AKO TAJMER NIJE VEĆ AKTIVAN, POKREĆE SE TAJMER
-      if (speed > 5 && !stopWatchStarted() && !raceFinished() && finishLat() && finishLong() && instructionRoute()) {
-        setStopWatchStarted(true);
-        if (loopOnce()) {
-          setStop(true);
-          setStartLat(latitude);
-          setStartLon(longitude);
-        }
+      if (speedSig() > -1) {
+        if (x) clearInterval(x);
+        if (y) clearInterval(y);
         function incrementStopWatch() {
           setStopWatchValue(stopWatchValue() + 1);
         }
@@ -373,169 +553,19 @@ export default function coDriver() {
         y = setInterval(async () => {
           await UpdateUserLocation(userLat(), userLon(), session().user.id);
           setNewCoords(true);
-        }, 3000);
-
-        function CodriverSpeech(text, time) {
-          PaceNoteReading.text = text;
-          setTimeout(async () => {
-            speechSynthesis.speak(PaceNoteReading);
-          }, time);
-        }
-
-        instructionRoute().forEach(instructions => {
-          setInstructionWasSpoken(false);
-          let directionShout = instructions.modifier;
-          let timeDelaySpeech = instructions.distance / speed * 1000;
-          let distance = instructions.distance;
-
-          if (distance < 500) {
-            let instructionIndex = instructions.index;
-
-            if (!instructionIndexArray.includes(instructionIndex)) {
-              setInstructionWasSpoken(true);
-              switch (directionShout) {
-
-                case "left":
-                  PaceNote = distance + "m!" + "left 3!";
-                  CodriverSpeech(PaceNote, timeDelaySpeech);
-                  break;
-
-                case "right":
-                  PaceNote = distance + "m!" + "right 3!";
-                  CodriverSpeech(PaceNote, timeDelaySpeech);
-                  break;
-
-                case "Straight":
-                  PaceNote = distance + "m!" + "flat out!";
-                  CodriverSpeech(PaceNote, timeDelaySpeech);
-                  break;
-
-                case "SlightRight":
-                  PaceNote = distance + "m!" + "right 4!";
-                  CodriverSpeech(PaceNote, timeDelaySpeech);
-                  break;
-
-                case "SharpRight":
-                  PaceNote = distance + "m!" + "right 2!";
-                  CodriverSpeech(PaceNote, timeDelaySpeech);
-                  break;
-
-                case "SharpLeft":
-                  PaceNote = distance + "m!" + "left 2!";
-                  CodriverSpeech(PaceNote, timeDelaySpeech);
-                  break;
-
-                case "SlightLeft":
-                  PaceNote = distance + "m!" + "left 4!";
-                  CodriverSpeech(PaceNote, timeDelaySpeech);
-                  break;
-
-                case "TurnAround":
-                case "Uturn":
-                  PaceNote = distance + "m!" + "turn around!";
-                  CodriverSpeech(PaceNote, timeDelaySpeech);
-                  break;
-
-                default:
-                  PaceNote = "Flat out!";
-                  CodriverSpeech(PaceNote, timeDelaySpeech);
-                  break;
-              }
-            }
-            instructionIndexArray.push(instructionIndex);
-          }
-        });
-
-        setLoopOnce(false);
+        }, 2000);
       }
-
-    } else {
-      setStopWatchStarted(false);
-      setRaceFinished(true);
-      setNewCoords(false);
-      let SpeedArrayLenght = SpeedArray.length;
-      let HeadingArrayLenght = HeadingArray.length - 1;
-      let AccelerationArrayLenght = AccerationArray.length - 1;
-
-      let sumAcc = 0;
-      for (let i = 1; i < AccelerationArrayLenght; i++) {
-        sumAcc += Math.abs(AccerationArray[i] - AccerationArray[i - 1]);
-      }
-
-      let sumSpe = 0;
-      SpeedArray.forEach(numSpe => {
-        sumSpe += numSpe;
-      });
-
-
-      let sumHea = 0;
-      for (let i = 1; i < HeadingArrayLenght; i++) {
-        let checkWrapp = 0;
-        checkWrapp = Math.abs(HeadingArray[i] - HeadingArray[i - 1]);
-        if (checkWrapp < 180) {
-          sumHea += checkWrapp;
-        } else {
-          sumHea += Math.abs(360 - checkWrapp);
-        }
-      }
-
-
-      CalcAccDif = sumAcc / AccelerationArrayLenght;
-      CalcHeaDif = sumHea / HeadingArrayLenght;
-      CalcSpeAvg = sumSpe / SpeedArrayLenght;
-      MaxSpeed = Math.max(...SpeedArray);
-
-      //Izvući broj trenutačnih prolaznika
-      const count = await countUserRoomEntries(token);
-      // data ?? 0 
-      countPlayers = (count ?? 0) + 1;
-
-      let UserFinishTime = Math.floor(stopWatchValue() / 3600) + ":" + Math.floor((stopWatchValue() % 3600) / 60) + ":" + stopWatchValue() % 60;
-
-      await AddUserToLeaderboard(UserFinishTime, count, MaxSpeed, session().user?.user_metadata?.username, token);
-
-      //PITATI ZA CAR TOP SPEED kod reg i spremiti u metadata
-      TrackHardnessFactor = (CalcAccDif * 0.5) + (CalcHeaDif * 0.4) + (CalcSpeAvg /* / carTopSpeed */ * 0.1);
-
-      //U SEKUNDAMA
-      TimeGradeConstant = totalTime / stopWatchValue();
-
-
-      if (TimeGradeConstant > 1.2) {
-        document.getElementById('Badge').innerHTML += '<img src="src/Assets/HDBadge.jpg" height="300" width="300"></img>';
-        var audio = document.getElementById("BottomFeeder");
-        audio.play();
-      }
-      else if (TimeGradeConstant < 1.2 && TimeGradeConstant >= 0.9) {
-        document.getElementById('Badge').innerHTML += '<img src="src/Assets/SBadge.jpg" height="300" width="300"></img>';
-        var audio = document.getElementById("Slay");
-        audio.play();
-      }
-
-      else if (TimeGradeConstant < 0.9 && TimeGradeConstant >= 0.5) {
-        document.getElementById('Badge').innerHTML += '<img src="src/Assets/DBadge.jpg" height="300" width="300"></img>';
-        var audio = document.getElementById("Dominating");
-        audio.play();
-      }
-
-      else {
-        document.getElementById('Badge').innerHTML += '<img src="src/Assets/WSBadge.jpg" height="300" width="300"></img>';
-        var audio = document.getElementById("WickedSick");
-        audio.play();
-      }
-
-      alert("Došli ste do cilja!");
-
-      navigator.geolocation.clearWatch(UserWatchId);
-
-      clearInterval(x);
-      clearInterval(y);
-      acl.stop();
+      SpeedArray.push(speed);
+      HeadingArray.push(heading);
+      setLoopOnce(false);
     }
-
-
   }
 
+  onCleanup(() => {
+    if (x) clearInterval(x);
+    if (y) clearInterval(y);
+    if (acl) acl.stop();
+  });
 
   return (
     <>
