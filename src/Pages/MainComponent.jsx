@@ -137,12 +137,14 @@ export default function coDriver() {
       return Math.random().toString(36).substr(2, 10);
     };
     //Nastanak sobe i korisnik se pridružuje
-    if (finishLat() && finishLong()) {
+    if (finishLat() && finishLong() && speedSig() < 5) {
       token = randToken();
       document.getElementById("ShowRoomCode").value = token;
       await InsertCreatedRoom(finishLat(), finishLong(), token, session().user?.user_metadata?.username, session().user.id, userLat(), userLon());
       StartChannel(token);
       document.getElementById("CreatButton").disabled = true;
+      finishMarkersGroup.clearLayers();
+      const marker = L.marker([finishLat(), finishLong()], { icon: Finish_icon }).addTo(finishMarkersGroup);
       setInRoom(true);
     } else {
       alert("SET THE FINISHLINE MARKER TO CREATE A ROOM!!!");
@@ -175,6 +177,7 @@ export default function coDriver() {
         StartChannel(EnteredRoomCode);
         setInRoom(true);
         document.getElementById("ShowRoomCode").value = EnteredRoomCode;
+      const marker = L.marker([finishLat(), finishLong()], { icon: Finish_icon }).addTo(finishMarkersGroup);
       } else {
         alert("Room DOESNT exist!");
       }
@@ -354,13 +357,14 @@ export default function coDriver() {
 
         if (startLat() && startLon()) {
           L.marker([startLat(), startLon()], { icon: Start_icon })
-            .bindPopup("Start line");
+            .bindPopup("Start line")
+            .addTo(map);
         }
       }
       // }
 
       //POKRETANJE UTRKE
-      if (!raceFinished() && !instructionWaSpoken() && instructionRoute().length > 0 && speedSig() > -1) {
+      if (!raceFinished() && !instructionWaSpoken() && instructionRoute().length > 0 && speedSig() > 5) {
         console.log("Zadovoljeni uvjeti za ulaz u pokretanje trke");
 
         function CodriverSpeech(text, time) {
@@ -537,7 +541,6 @@ export default function coDriver() {
 
     setSpeed(speed);
 
-
     let DistToFinishLine = Math.sqrt(Math.pow(finishLat() - latitude, 2) + Math.pow(finishLong() - longitude, 2));
     setDistanceToFinishLine(DistToFinishLine);
     if (DistToFinishLine > 0.0001) {
@@ -549,7 +552,7 @@ export default function coDriver() {
       setUserLat(latitude);
       setUserLon(longitude);
 
-      if (speedSig() > -1) {
+      if (speedSig() > 5) {
         if (x) clearInterval(x);
         if (y) clearInterval(y);
         function incrementStopWatch() {
@@ -559,14 +562,14 @@ export default function coDriver() {
 
         //async
         y = setInterval(async () => {
-          if(userLat() && userLon()){
-          let differenceLat = Math.abs(userLat() - latitude);
-          let differenceLong = Math.abs(userLon() - longitude);
-          if (differenceLat !== 0 || differenceLong !== 0) {
+         // if(userLat() && userLon()){
+         // let differenceLat = Math.abs(userLat() - latitude);
+         // let differenceLong = Math.abs(userLon() - longitude);
+        //  if (differenceLat !== 0 || differenceLong !== 0) {
             await UpdateUserLocation(userLat(), userLon(), session().user.id);
             setNewCoords(true);
-          }
-        }
+       //   }
+      //  }
         }, 2000);
       }
       SpeedArray.push(speed);
