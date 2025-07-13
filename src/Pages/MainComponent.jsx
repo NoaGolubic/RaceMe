@@ -33,7 +33,10 @@ export default function coDriver() {
   const [instructionRoute, setInstructionRoute] = createSignal([]);
   const [speedSig, setSpeed] = createSignal(0);
   const [distanceToFinishLine, setDistanceToFinishLine] = createSignal(0);
+    const [stopLogicRouteRefresh, setStopLogicRouteRefresh] = createSignal(false);
 
+
+  
   let AccelerationData;
   let SpeedArray = [];
   let HeadingArray = [];
@@ -259,7 +262,7 @@ export default function coDriver() {
       if (NewCoords()) {
 
         //LOGIČKA RUTA
-        if ((NewCoords() || instructionWaSpoken()) && finishLat() && finishLong() && userLat() && userLon()) {
+        if ((NewCoords() || instructionWaSpoken()) && finishLat() && finishLong() && !stopLogicRouteRefresh()) {
           if (routeLogic) {
             map.removeControl(routeLogic);
           }
@@ -282,7 +285,12 @@ export default function coDriver() {
                 const filteredInstr = routes[0].instructions.filter(
                   item => !instructionIndexArray.includes(item.index)
                 );
+                if (filteredInstr.length !== 0){
                 setInstructionRoute(filteredInstr);
+                }else{
+                  setStopLogicRouteRefresh(true);
+                  console.log("ZADOVOLJENO ZATVARANJE");
+                }
               } else {
                 setInstructionRoute(routes[0].instructions);
               }
@@ -362,7 +370,6 @@ export default function coDriver() {
           setTimeout(() => {
             speechSynthesis.speak(PaceNoteReading);
             PaceNoteReading.onend = () => {
-              // setInstructionRoute(prev => prev.slice(1));
               setInstructionWasSpoken(false);
               console.log("Izgovorilo se", text);
             };
@@ -376,7 +383,7 @@ export default function coDriver() {
         let timeDelaySpeech = distance / speedSig() * 1000;
         let instructionIndex = currentInstruction.index;
 
-        console.log(currentInstruction);
+        console.log("OVO JE TRENUTNA INSTRUKCIJA",currentInstruction);
 
         if (!instructionIndexArray.includes(instructionIndex) || instructionIndexArray.length === 0) {
           instructionIndexArray.push(instructionIndex);
@@ -523,12 +530,11 @@ export default function coDriver() {
 
   //PROVJERIT JEL SE SVE DOHVACA
  /* async*/ function UserWatch(pos) {
+  if(!raceFinished()){
 
     const { accuracy, latitude, longitude, heading, speed } = pos.coords;
     acl.start();
 
-    setUserLat(latitude);
-    setUserLon(longitude);
     setSpeed(speed);
 
 
@@ -540,6 +546,8 @@ export default function coDriver() {
         setStartLat(latitude);
         setStartLon(longitude);
       }
+      setUserLat(latitude);
+      setUserLon(longitude);
 
       if (speedSig() > -1) {
         if (x) clearInterval(x);
@@ -551,15 +559,22 @@ export default function coDriver() {
 
         //async
         y = setInterval(async () => {
-          await UpdateUserLocation(userLat(), userLon(), session().user.id);
-          setNewCoords(true);
+          if(userLat() && userLon()){
+          let differenceLat = Math.abs(userLat() - latitude);
+          let differenceLong = Math.abs(userLon() - longitude);
+          if (differenceLat !== 0 || differenceLong !== 0) {
+            await UpdateUserLocation(userLat(), userLon(), session().user.id);
+            setNewCoords(true);
+          }
+        }
         }, 2000);
       }
       SpeedArray.push(speed);
       HeadingArray.push(heading);
       setLoopOnce(false);
     }
-  }
+}
+ }
 
   onCleanup(() => {
     if (x) clearInterval(x);
