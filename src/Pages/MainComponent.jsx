@@ -572,7 +572,7 @@ export default function coDriver() {
           if (differenceLat !== 0 || differenceLong !== 0) {
             await UpdateUserLocation(userLat(), userLon(), session().user.id);
             setNewCoords(true);
-         }
+          }
         }
         }, 2000);
       }
