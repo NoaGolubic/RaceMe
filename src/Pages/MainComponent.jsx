@@ -23,7 +23,7 @@ export default function coDriver() {
   const [userLat, setUserLat] = createSignal(null);
   const [userLon, setUserLon] = createSignal(null);
   const [stopWatchValue, setStopWatchValue] = createSignal(0);
-  const [raceFinished, setRaceFinished] = createSignal(false);
+  const [raceFinished, setRaceFinished] = createSignal(false);                     //true
   const [startLat, setStartLat] = createSignal(0);
   const [startLon, setStartLon] = createSignal(0);
   const [inRoom, setInRoom] = createSignal(false);
@@ -33,8 +33,14 @@ export default function coDriver() {
   const [instructionRoute, setInstructionRoute] = createSignal([]);
   const [speedSig, setSpeed] = createSignal(0);
   const [distanceToFinishLine, setDistanceToFinishLine] = createSignal(0);
-    const [stopLogicRouteRefresh, setStopLogicRouteRefresh] = createSignal(false);
+  const [stopLogicRouteRefresh, setStopLogicRouteRefresh] = createSignal(false);
 
+  const[CalcAccDif, setCalcAccDif] = createSignal(0);
+  const[CalcHeaDif, setCalcHeaDif] = createSignal(0);
+  const[CalcSpeAvg, setCalcSpeAvg] = createSignal(0);
+  const[MaxSpeed, setMaxSpeed] = createSignal(0);
+  const[TrackHardnessFactor, setTrackHardnessFactor] = createSignal(0);
+ const[UserTimeGrade, setUserTimeGrade] = createSignal(0);
 
   
   let AccelerationData;
@@ -42,11 +48,6 @@ export default function coDriver() {
   let HeadingArray = [];
   let AccerationArray = [];
   let instruction = [];
-
-  let CalcAccDif;
-  let CalcHeaDif;
-  let CalcSpeAvg;
-  let MaxSpeed;
 
   var totalTime;
   let UserWatchId;
@@ -92,10 +93,12 @@ export default function coDriver() {
   //SPEECHAPI MOZDA STAVITI U ASYNC
   let PaceNote;
   let PaceNoteReading = new SpeechSynthesisUtterance();
-  let voices = speechSynthesis.getVoices();
-  PaceNoteReading.voice = voices.find(voice => voice.name === "Google US English" && voice.lang === "en-US");
+  speechSynthesis.onvoiceschanged = () => {
+ let voices = speechSynthesis.getVoices();
+  PaceNoteReading.voice = voices.find(voice => voice.name === "Microsoft Aria Online (Natural) - English (United States)" && voice.lang === "en-US");
   PaceNoteReading.pitch = 1.2;
-  PaceNoteReading.rate = 1;
+  PaceNoteReading.rate = 1.2;
+  }
 
   const acl = new Accelerometer({ frequency: 60 });
   acl.addEventListener("reading", () => {
@@ -395,43 +398,43 @@ export default function coDriver() {
           switch (directionShout) {
 
             case "Left":
-              PaceNote = distance + "m!" + "left 3!";
+              PaceNote = Math.trunc(distance) + "meters!" + "left 3!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "Right":
-              PaceNote = distance + "m!" + "right 3!";
+              PaceNote =  Math.trunc(distance) + "meters!" + "right 3!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "Straight":
-              PaceNote = distance + "m!" + "flat out!";
+              PaceNote =  Math.trunc(distance) + "meters!" + "flat out!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "SlightRight":
-              PaceNote = distance + "m!" + "right 4!";
+              PaceNote =  Math.trunc(distance) + "meters!" + "right 4!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "SharpRight":
-              PaceNote = distance + "m!" + "right 2!";
+              PaceNote =  Math.trunc(distance) + "meters!" + "right 2!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "SharpLeft":
-              PaceNote = distance + "m!" + "left 2!";
+              PaceNote =  Math.trunc(distance) + "meters!" + "left 2!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "SlightLeft":
-              PaceNote = distance + "m!" + "left 4!";
+              PaceNote =  Math.trunc(distance) + "meters!" + "left 4!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "TurnAround":
             case "Uturn":
-              PaceNote = distance + "m!" + "turn around!";
+              PaceNote =  Math.trunc(distance) + "meters!" + "turn around!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
@@ -446,7 +449,7 @@ export default function coDriver() {
       }
 
 
-      if ((distanceToFinishLine() < 0.0000001) && finishLat() && finishLong()) {
+      if ((distanceToFinishLine() < 0.0000001) && finishLat() && finishLong()) { //1000000000
         setRaceFinished(true);
         setNewCoords(false);
         let SpeedArrayLenght = SpeedArray.length;
@@ -477,10 +480,10 @@ export default function coDriver() {
         }
 
 
-        CalcAccDif = sumAcc / AccelerationArrayLenght;
-        CalcHeaDif = sumHea / HeadingArrayLenght;
-        CalcSpeAvg = sumSpe / SpeedArrayLenght;
-        MaxSpeed = Math.max(...SpeedArray);
+        setCalcAccDif(sumAcc / AccelerationArrayLenght);
+        setCalcHeaDif(sumHea / HeadingArrayLenght);
+        setCalcSpeAvg(sumSpe / SpeedArrayLenght);
+        setMaxSpeed(Math.max(...SpeedArray));
 
         //Izvući broj trenutačnih prolaznika
         const count = await countUserRoomEntries(token);
@@ -489,13 +492,14 @@ export default function coDriver() {
 
         let UserFinishTime = Math.floor(stopWatchValue() / 3600) + ":" + Math.floor((stopWatchValue() % 3600) / 60) + ":" + stopWatchValue() % 60;
 
+        setUserTimeGrade(stopWatchValue() / totalTime);
         await AddUserToLeaderboard(UserFinishTime, count, MaxSpeed, session().user?.user_metadata?.username, token);
 
         //PITATI ZA CAR TOP SPEED kod reg i spremiti u metadata
-        TrackHardnessFactor = (CalcAccDif * 0.5) + (CalcHeaDif * 0.4) + (CalcSpeAvg /* / carTopSpeed */ * 0.1);
+        setTrackHardnessFactor((CalcAccDif * 0.5) + (CalcHeaDif * 0.4) + (CalcSpeAvg /* / carTopSpeed */ * 0.1));
 
         //U SEKUNDAMA
-        TimeGradeConstant = totalTime / stopWatchValue();
+      let  TimeGradeConstant = totalTime / stopWatchValue();
 
 
         if (TimeGradeConstant > 1.2) {
@@ -562,14 +566,14 @@ export default function coDriver() {
 
         //async
         y = setInterval(async () => {
-         // if(userLat() && userLon()){
-         // let differenceLat = Math.abs(userLat() - latitude);
-         // let differenceLong = Math.abs(userLon() - longitude);
-        //  if (differenceLat !== 0 || differenceLong !== 0) {
+          if(userLat() && userLon()){
+          let differenceLat = Math.abs(userLat() - latitude);
+          let differenceLong = Math.abs(userLon() - longitude);
+          if (differenceLat !== 0 || differenceLong !== 0) {
             await UpdateUserLocation(userLat(), userLon(), session().user.id);
             setNewCoords(true);
-       //   }
-      //  }
+         }
+        }
         }, 2000);
       }
       SpeedArray.push(speed);
@@ -608,36 +612,6 @@ export default function coDriver() {
         <div id="map" class="w-95 h-80 min-w-80 max-h-65 rounded-lg mt-16 border-2 border-red-200"></div>
       </div>
 
-      <Show when={raceFinished()}>
-        <div>
-          <h1>Track Grade</h1>
-          <div><h3>{CalcAccDif} Average acceleration difference</h3></div>
-          <div><h3>{CalcHeaDif} Average heading difference</h3></div>
-          <div><h3>{CalcSpeAvg} Average speed</h3></div>
-          <div><h3>{MaxSpeed} Maximum speed</h3></div>
-        </div>
-
-        <div><h2>Final Grade, with a factor of - {TrackHardnessFactor}</h2></div>
-        <Show when={TrackHardnessFactor <= 10}>
-          <p>Slika easy</p>
-        </Show>
-        <Show when={TrackHardnessFactor > 10 && TrackHardnessFactor <= 20}>
-          <p>Slika medium</p>
-        </Show>
-        <Show when={TrackHardnessFactor > 20 && TrackHardnessFactor >= 40}>
-          <p>Slika hard</p>
-        </Show>
-        <Show when={TrackHardnessFactor > 40 && TrackHardnessFactor >= 60}>
-          <p>Slika extra hard</p>
-        </Show>
-
-        <div>
-          <p>Your speed is {stopWatchValue() / totalTime} times faster than calculated.</p>
-          <div id="Badge"></div>
-        </div>
-
-      </Show>
-
       <Show when={countPlayers !== 0}>
         <div class="relative overflow-x-auto shadow-md sm:rounded-lg mt-5 border-2  border-gray-600">
           <table class="w-full text-sm text-left rtl:text-right  text-gray-400">
@@ -658,6 +632,45 @@ export default function coDriver() {
         </div>
 
       </Show>
+
+            <Show when={raceFinished()}>
+        <div class="place-items-center">
+          <h1 class="mt-8 font-bold text-lg">Track Grade</h1>
+          <div class="mt-4 font-semibold"><h3>Average acceleration difference: {CalcAccDif()}</h3></div>
+          <div class="mt-4 font-semibold"><h3>Average heading difference: {CalcHeaDif()}</h3></div>
+          <div class="mt-4 font-semibold"><h3>Average speed: {CalcSpeAvg()}</h3></div>
+          <div class="mt-4 font-semibold"><h3>Maximum speed: {MaxSpeed()}</h3></div>
+        </div>
+
+        <div class="justify-center flex flex-center mt-8"><h2>Final Grade, with a factor of - {(TrackHardnessFactor())}</h2></div>
+        <Show when={TrackHardnessFactor() <= 10}>
+          <div class="place-items-center">
+         <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+         </div>
+        </Show>
+        <Show when={TrackHardnessFactor() > 10 && TrackHardnessFactor() <= 20}>
+           <div class="place-items-center">
+         <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+         </div>
+        </Show>
+        <Show when={TrackHardnessFactor() > 20 && TrackHardnessFactor() >= 40}>
+         <div class="place-items-center">
+         <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+         </div>
+        </Show>
+        <Show when={TrackHardnessFactor() > 40 && TrackHardnessFactor() >= 60}>
+         <div class="place-items-center">
+         <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+         </div>
+        </Show>
+
+        <div class="place-items-center">
+          <p class="mt-16 font-bold text-lg">Your speed is {UserTimeGrade()} times faster than calculated.</p>
+          <div id="Badge" class="mt-8 mb-32 self-center rounded-xl overflow-hidden"></div>
+        </div>
+
+      </Show>
+
       <Show when={!inRoom()}>
         <h1 class="mt-16 text-center text-2xl font-bold text-black mb-6">Join a room!</h1>
         <form onSubmit={JoinRoom} class="flex flex-col gap-4">
