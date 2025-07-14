@@ -1,22 +1,24 @@
 //HELPER FUNCTIONS FOR CHANNELS
 import { createSignal } from "solid-js";
 import supabase from "../Services/supabaseClient";
+import{InsertCreatedRoom} from "../Backend/DatabaseCalls";
 
 export const [leaderboardUpdated, setLeaderboardUpdated] = createSignal(false);
 export const [UserCoordsUpdate, setUserCoordsUpdate] = createSignal(false);
+export const [channelReady, setChannelReady] = createSignal(false);
 
 export let Participants = new Map();
 export let rankUser = new Map();
 
 let channelA;
 
-export function StartChannel(filterRoomCode) {
+export async function StartChannel(filterRoomCode) {
     channelA = supabase
         .channel('schema-db-changes')
         .on(
             'postgres_changes',
             {
-                event: 'update',
+                event: '*',
                 schema: 'public',
                 table: 'room',
                 filter: `EntryCode=eq.${filterRoomCode}`
@@ -27,10 +29,9 @@ export function StartChannel(filterRoomCode) {
                     longitude: payload.new.CurrentUserLng
                 });
 
-                setUserCoordsUpdate(true);
+                setUserCoordsUpdate(true);  
             }
         )
-
         .on(
             'postgres_changes',
             {
@@ -48,10 +49,16 @@ export function StartChannel(filterRoomCode) {
                 setLeaderboardUpdated(true);
             }
         )
-        .subscribe()
-
+         channelA.subscribe((status) => {
+        if(status === "SUBSCRIBED"){
+            setTimeout(() => {
+               setChannelReady(true); 
+            }, 3000);
+        }
+         });
 }
 
 export function StopChannel() {
     supabase.removeChannel(channelA);
+    console.log("KANAL JE ZATVOREN");
 }

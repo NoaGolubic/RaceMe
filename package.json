@@ -17,8 +17,9 @@
     "vite-plugin-solid": "^2.11.6"
   },
   "dependencies": {
+    "@solid-primitives/promise": "^1.1.2",
     "@solidjs/router": "^0.15.3",
-    "@supabase/supabase-js": "^2.50.4",
+    "@supabase/supabase-js": "^2.51.0",
     "leaflet": "^1.9.4",
     "leaflet-routing-machine": "^3.2.12",
     "solid-js": "^1.9.5"

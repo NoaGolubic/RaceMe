@@ -6,10 +6,11 @@
 //Dodan leaderboards za room
 
 import { createSignal, onMount, createEffect, Show, onCleanup } from "solid-js";
+import { until } from "@solid-primitives/promise";
 import L, { control, icon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-routing-machine";
-import { StopChannel, StartChannel, Participants, rankUser, setLeaderboardUpdated, leaderboardUpdated, setUserCoordsUpdate, UserCoordsUpdate } from "../Backend/ChannelHelper";
+import { StopChannel, StartChannel, Participants, rankUser, setLeaderboardUpdated, leaderboardUpdated, setUserCoordsUpdate, UserCoordsUpdate, channelReady } from "../Backend/ChannelHelper";
 import { GetRoomFinishLine, DeleteUserFromRoom, InsertCreatedRoom, InsertUserInRoom, UpdateUserLocation, AddUserToLeaderboard, countUserRoomEntries } from "../Backend/DatabaseCalls";
 import { useAuth } from "../Auth/SupabaseAuthProvider";
 
@@ -35,14 +36,14 @@ export default function coDriver() {
   const [distanceToFinishLine, setDistanceToFinishLine] = createSignal(0);
   const [stopLogicRouteRefresh, setStopLogicRouteRefresh] = createSignal(false);
 
-  const[CalcAccDif, setCalcAccDif] = createSignal(0);
-  const[CalcHeaDif, setCalcHeaDif] = createSignal(0);
-  const[CalcSpeAvg, setCalcSpeAvg] = createSignal(0);
-  const[MaxSpeed, setMaxSpeed] = createSignal(0);
-  const[TrackHardnessFactor, setTrackHardnessFactor] = createSignal(0);
- const[UserTimeGrade, setUserTimeGrade] = createSignal(0);
+  const [CalcAccDif, setCalcAccDif] = createSignal(0);
+  const [CalcHeaDif, setCalcHeaDif] = createSignal(0);
+  const [CalcSpeAvg, setCalcSpeAvg] = createSignal(0);
+  const [MaxSpeed, setMaxSpeed] = createSignal(0);
+  const [TrackHardnessFactor, setTrackHardnessFactor] = createSignal(0);
+  const [UserTimeGrade, setUserTimeGrade] = createSignal(0);
 
-  
+
   let AccelerationData;
   let SpeedArray = [];
   let HeadingArray = [];
@@ -61,7 +62,6 @@ export default function coDriver() {
   let map;
   let route;
   let routeLogic;
-  // var instructionRoute
   let instructionIndexArray = [];
 
   const session = useAuth();
@@ -82,7 +82,7 @@ export default function coDriver() {
 
   var Enemy_icon = L.icon({
     iconUrl: 'src/Assets/helmet_enemy.png',
-    iconSize: [25, 25]
+    iconSize: [28, 28]
   });
 
   var Player_icon = L.icon({
@@ -94,10 +94,10 @@ export default function coDriver() {
   let PaceNote;
   let PaceNoteReading = new SpeechSynthesisUtterance();
   speechSynthesis.onvoiceschanged = () => {
- let voices = speechSynthesis.getVoices();
-  PaceNoteReading.voice = voices.find(voice => voice.name === "Microsoft Aria Online (Natural) - English (United States)" && voice.lang === "en-US");
-  PaceNoteReading.pitch = 1.2;
-  PaceNoteReading.rate = 1.2;
+    let voices = speechSynthesis.getVoices();
+    PaceNoteReading.voice = voices.find(voice => voice.name === "Microsoft Aria Online (Natural) - English (United States)" && voice.lang === "en-US");
+    PaceNoteReading.pitch = 1.2;
+    PaceNoteReading.rate = 1.2;
   }
 
   const acl = new Accelerometer({ frequency: 60 });
@@ -123,10 +123,8 @@ export default function coDriver() {
     finishMarkersGroup.clearLayers();
     userMarkersGroup.clearLayers();
     enemyMarkersGroup.clearLayers();
-
     let codeValue = document.getElementById("ShowRoomCode").value;
     document.getElementById("ShowRoomCode").value = "";
-
     StopChannel();
     Participants.delete(session().user?.user_metadata?.username);
     await DeleteUserFromRoom(codeValue, session().user.id);
@@ -143,8 +141,9 @@ export default function coDriver() {
     if (finishLat() && finishLong() && speedSig() < 5) {
       token = randToken();
       document.getElementById("ShowRoomCode").value = token;
+      await StartChannel(token);
+      await until(() => channelReady());
       await InsertCreatedRoom(finishLat(), finishLong(), token, session().user?.user_metadata?.username, session().user.id, userLat(), userLon());
-      StartChannel(token);
       document.getElementById("CreatButton").disabled = true;
       finishMarkersGroup.clearLayers();
       const marker = L.marker([finishLat(), finishLong()], { icon: Finish_icon }).addTo(finishMarkersGroup);
@@ -173,14 +172,16 @@ export default function coDriver() {
         }
         finishMarkersGroup.clearLayers();
         const data = await GetRoomFinishLine(EnteredRoomCode);
-        await InsertUserInRoom(session().user?.user_metadata?.username, session().user.id, userLat(), userLon(), EnteredRoomCode, data[0].FinishLineLat, data[0].FinishLineLong);
         setFinishLat(data[0].FinishLineLat);
         setFinishLong(data[0].FinishLineLong);
         //TREBA SLOZITY POLICY NA USERA
-        StartChannel(EnteredRoomCode);
+        await StartChannel(EnteredRoomCode);
+        await until(() => channelReady());
+        await InsertUserInRoom(session().user?.user_metadata?.username, session().user.id, userLat(), userLon(), EnteredRoomCode, data[0].FinishLineLat, data[0].FinishLineLong);
+
         setInRoom(true);
         document.getElementById("ShowRoomCode").value = EnteredRoomCode;
-      const marker = L.marker([finishLat(), finishLong()], { icon: Finish_icon }).addTo(finishMarkersGroup);
+        const marker = L.marker([finishLat(), finishLong()], { icon: Finish_icon }).addTo(finishMarkersGroup);
       } else {
         alert("Room DOESNT exist!");
       }
@@ -291,11 +292,10 @@ export default function coDriver() {
                 const filteredInstr = routes[0].instructions.filter(
                   item => !instructionIndexArray.includes(item.index)
                 );
-                if (filteredInstr.length !== 0){
-                setInstructionRoute(filteredInstr);
-                }else{
+                if (filteredInstr.length !== 0) {
+                  setInstructionRoute(filteredInstr);
+                } else {
                   setStopLogicRouteRefresh(true);
-                  console.log("ZADOVOLJENO ZATVARANJE");
                 }
               } else {
                 setInstructionRoute(routes[0].instructions);
@@ -306,8 +306,6 @@ export default function coDriver() {
           const routingControlContainer = routeLogic.getContainer();
           const controlContainerParent = routingControlContainer.parentNode;
           controlContainerParent.removeChild(routingControlContainer);
-
-          console.log("OVO JE RUTA::", instructionRoute());
 
         }
         userMarkersGroup.clearLayers();
@@ -320,13 +318,15 @@ export default function coDriver() {
       //PRIKAZ KOORDINATA PROTIVNIKA
       if (UserCoordsUpdate()) {
         //OVO MICE NASE PODATKE IZ MAPE DA NEMAMO DVIJE LOKACIJE ZA SEBE
+        //console.log("BEFORE",Participants.get("Ayg00").latitude);
         enemyMarkersGroup.clearLayers();
         Participants.delete(session().user?.user_metadata?.username);
-        for ([key, value] of Participants) {
+        Participants.forEach((value, key) => {
           L.marker([value.latitude, value.longitude], { icon: Enemy_icon })
-            .addTo(enemyMarkersGroup)
-            .bindPopup(key);
-        }
+          .addTo(enemyMarkersGroup)
+          .bindPopup(key);
+
+        });
         setUserCoordsUpdate(false);
       }
 
@@ -368,8 +368,6 @@ export default function coDriver() {
 
       //POKRETANJE UTRKE
       if (!raceFinished() && !instructionWaSpoken() && instructionRoute().length > 0 && speedSig() > 5) {
-        console.log("Zadovoljeni uvjeti za ulaz u pokretanje trke");
-
         function CodriverSpeech(text, time) {
           setInstructionWasSpoken(true);
           PaceNoteReading.text = text;
@@ -390,51 +388,48 @@ export default function coDriver() {
         let timeDelaySpeech = distance / speedSig() * 1000;
         let instructionIndex = currentInstruction.index;
 
-        console.log("OVO JE TRENUTNA INSTRUKCIJA",currentInstruction);
-
         if (!instructionIndexArray.includes(instructionIndex) || instructionIndexArray.length === 0) {
           instructionIndexArray.push(instructionIndex);
-          console.log("ARRAY ZA PROVJERU INDEXA", instructionIndexArray);
           switch (directionShout) {
 
             case "Left":
-              PaceNote = Math.trunc(distance) + "meters!" + "left 3!";
+              PaceNote = Math.trunc(distance) + " meters!" + "left 3!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "Right":
-              PaceNote =  Math.trunc(distance) + "meters!" + "right 3!";
+              PaceNote = Math.trunc(distance) + " meters!" + "right 3!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "Straight":
-              PaceNote =  Math.trunc(distance) + "meters!" + "flat out!";
+              PaceNote = Math.trunc(distance) + " meters!" + "flat out!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "SlightRight":
-              PaceNote =  Math.trunc(distance) + "meters!" + "right 4!";
+              PaceNote = Math.trunc(distance) + " meters!" + "right 4!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "SharpRight":
-              PaceNote =  Math.trunc(distance) + "meters!" + "right 2!";
+              PaceNote = Math.trunc(distance) + " meters!" + "right 2!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "SharpLeft":
-              PaceNote =  Math.trunc(distance) + "meters!" + "left 2!";
+              PaceNote = Math.trunc(distance) + " meters!" + "left 2!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "SlightLeft":
-              PaceNote =  Math.trunc(distance) + "meters!" + "left 4!";
+              PaceNote = Math.trunc(distance) + " meters!" + "left 4!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "TurnAround":
             case "Uturn":
-              PaceNote =  Math.trunc(distance) + "meters!" + "turn around!";
+              PaceNote = Math.trunc(distance) + " meters!" + "turn around!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
@@ -449,7 +444,7 @@ export default function coDriver() {
       }
 
 
-      if ((distanceToFinishLine() < 0.0000001) && finishLat() && finishLong()) { //1000000000
+      if ((distanceToFinishLine() < 0.0000001) && finishLat() && finishLong()) { //10000
         setRaceFinished(true);
         setNewCoords(false);
         let SpeedArrayLenght = SpeedArray.length;
@@ -499,7 +494,7 @@ export default function coDriver() {
         setTrackHardnessFactor((CalcAccDif * 0.5) + (CalcHeaDif * 0.4) + (CalcSpeAvg /* / carTopSpeed */ * 0.1));
 
         //U SEKUNDAMA
-      let  TimeGradeConstant = totalTime / stopWatchValue();
+        let TimeGradeConstant = totalTime / stopWatchValue();
 
 
         if (TimeGradeConstant > 1.2) {
@@ -538,50 +533,50 @@ export default function coDriver() {
 
   //PROVJERIT JEL SE SVE DOHVACA
  /* async*/ function UserWatch(pos) {
-  if(!raceFinished()){
+    if (!raceFinished()) {
 
-    const { accuracy, latitude, longitude, heading, speed } = pos.coords;
-    acl.start();
+      const { accuracy, latitude, longitude, heading, speed } = pos.coords;
+      acl.start();
 
-    setSpeed(speed);
+      setSpeed(speed);
 
-    let DistToFinishLine = Math.sqrt(Math.pow(finishLat() - latitude, 2) + Math.pow(finishLong() - longitude, 2));
-    setDistanceToFinishLine(DistToFinishLine);
-    if (DistToFinishLine > 0.0001) {
-      if (loopOnce()) {
-        setStop(true);
-        setStartLat(latitude);
-        setStartLon(longitude);
-      }
-      setUserLat(latitude);
-      setUserLon(longitude);
-
-      if (speedSig() > 5) {
-        if (x) clearInterval(x);
-        if (y) clearInterval(y);
-        function incrementStopWatch() {
-          setStopWatchValue(stopWatchValue() + 1);
+      let DistToFinishLine = Math.sqrt(Math.pow(finishLat() - latitude, 2) + Math.pow(finishLong() - longitude, 2));
+      setDistanceToFinishLine(DistToFinishLine);
+      if (DistToFinishLine > 0.0001) {
+        if (loopOnce()) {
+          setStop(true);
+          setStartLat(latitude);
+          setStartLon(longitude);
         }
-        x = setInterval(incrementStopWatch, 1000);
+        setUserLat(latitude);
+        setUserLon(longitude);
 
-        //async
-        y = setInterval(async () => {
-          if(userLat() && userLon()){
-          let differenceLat = Math.abs(userLat() - latitude);
-          let differenceLong = Math.abs(userLon() - longitude);
-          if (differenceLat !== 0 || differenceLong !== 0) {
-            await UpdateUserLocation(userLat(), userLon(), session().user.id);
-            setNewCoords(true);
+        if (speedSig() > 5) {
+          if (x) clearInterval(x);
+          if (y) clearInterval(y);
+          function incrementStopWatch() {
+            setStopWatchValue(stopWatchValue() + 1);
           }
+          x = setInterval(incrementStopWatch, 1000);
+
+          //async
+          y = setInterval(async () => {
+            if (userLat() && userLon()) {
+              let differenceLat = Math.abs(userLat() - latitude);
+              let differenceLong = Math.abs(userLon() - longitude);
+              if (differenceLat !== 0 || differenceLong !== 0) {
+                await UpdateUserLocation(userLat(), userLon(), session().user.id);
+                setNewCoords(true);
+              }
+            }
+          }, 2000);
         }
-        }, 2000);
+        SpeedArray.push(speed);
+        HeadingArray.push(heading);
+        setLoopOnce(false);
       }
-      SpeedArray.push(speed);
-      HeadingArray.push(heading);
-      setLoopOnce(false);
     }
-}
- }
+  }
 
   onCleanup(() => {
     if (x) clearInterval(x);
@@ -633,7 +628,7 @@ export default function coDriver() {
 
       </Show>
 
-            <Show when={raceFinished()}>
+      <Show when={raceFinished()}>
         <div class="place-items-center">
           <h1 class="mt-8 font-bold text-lg">Track Grade</h1>
           <div class="mt-4 font-semibold"><h3>Average acceleration difference: {CalcAccDif()}</h3></div>
@@ -645,23 +640,23 @@ export default function coDriver() {
         <div class="justify-center flex flex-center mt-8"><h2>Final Grade, with a factor of - {(TrackHardnessFactor())}</h2></div>
         <Show when={TrackHardnessFactor() <= 10}>
           <div class="place-items-center">
-         <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
-         </div>
+            <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+          </div>
         </Show>
         <Show when={TrackHardnessFactor() > 10 && TrackHardnessFactor() <= 20}>
-           <div class="place-items-center">
-         <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
-         </div>
+          <div class="place-items-center">
+            <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+          </div>
         </Show>
         <Show when={TrackHardnessFactor() > 20 && TrackHardnessFactor() >= 40}>
-         <div class="place-items-center">
-         <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
-         </div>
+          <div class="place-items-center">
+            <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+          </div>
         </Show>
         <Show when={TrackHardnessFactor() > 40 && TrackHardnessFactor() >= 60}>
-         <div class="place-items-center">
-         <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
-         </div>
+          <div class="place-items-center">
+            <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+          </div>
         </Show>
 
         <div class="place-items-center">
