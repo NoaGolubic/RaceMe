@@ -603,7 +603,7 @@ export default function coDriver() {
 
       <div>
         <h1 class="flex justify-center items-center text-3xl font-bold text-black mb-8 mt-12">G-Force</h1>
-        <div class="place-items-center grid h-16 text-xl font-bold text-black bg-red-200 rounded-xl mx-auto w-50"><h3>{GForce()} g</h3></div>
+        <div class="place-items-center grid h-16 text-xl font-bold text-black bg-red-200 rounded-xl mx-auto w-50"><h3>{(GForce()-0.99).toFixed(1)} g</h3></div>
       </div>
       <div class="flex flex-center justify-center">
         <div id="map" class="w-95 h-80 min-w-80 max-h-65 rounded-lg mt-16 border-2 border-red-200"></div>
@@ -672,7 +672,7 @@ export default function coDriver() {
         <h1 class="mt-16 text-center text-2xl font-bold text-black mb-6">Join a room!</h1>
         <form onSubmit={JoinRoom} class="flex flex-col gap-4">
           <div class="flex text-black  justify-center items-baseline mt-4 gap-4">
-            <label class="font-bold text-xl mb-2 ml-12">Room Code:</label>
+            <label class="font-bold text-base mb-2 ml-12">Room Code:</label>
             <input type="text" name="EnteredRoomCode" required class="p-2 rounded-md max-w-100 border-red-200 border-4" />
           </div>
           <button type="submit" class="mt-4 bg-slate-600 text-white p-2 rounded-md w-100 self-center hover:bg-slate-700">
