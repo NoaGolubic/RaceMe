@@ -23,6 +23,8 @@ export default function coDriver() {
   const [finishLong, setFinishLong] = createSignal(null);
   const [userLat, setUserLat] = createSignal(null);
   const [userLon, setUserLon] = createSignal(null);
+  const [markerMoved, setMarkerMoved] = createSignal(false);
+
   const [stopWatchValue, setStopWatchValue] = createSignal(0);
   const [raceFinished, setRaceFinished] = createSignal(false);                     //true
   const [startLat, setStartLat] = createSignal(0);
@@ -174,7 +176,6 @@ export default function coDriver() {
         const data = await GetRoomFinishLine(EnteredRoomCode);
         setFinishLat(data[0].FinishLineLat);
         setFinishLong(data[0].FinishLineLong);
-        //TREBA SLOZITY POLICY NA USERA
         await StartChannel(EnteredRoomCode);
         await until(() => channelReady());
         await InsertUserInRoom(session().user?.user_metadata?.username, session().user.id, userLat(), userLon(), EnteredRoomCode, data[0].FinishLineLat, data[0].FinishLineLong);
@@ -217,17 +218,17 @@ export default function coDriver() {
 
     map.on('click', (e) => {
       const markersCount = finishMarkersGroup.getLayers().length;
-
       //Postavljanje koordinata finisha na dodir
+
       if (markersCount < 1) {
-        const marker = L.marker(e.latlng, { icon: Finish_icon }).addTo(finishMarkersGroup);
-        setFinishLat(e.latlng.lat);
-        setFinishLong(e.latlng.lng);
+          const marker = L.marker(e.latlng, { icon: Finish_icon }).addTo(finishMarkersGroup);
+          setFinishLat(e.latlng.lat);
+          setFinishLong(e.latlng.lng);
+          setMarkerMoved(true);
         return;
       }
-
       finishMarkersGroup.clearLayers();
-    });
+        });
 
 
     createEffect(async () => {
@@ -266,10 +267,10 @@ export default function coDriver() {
 
 
 
-      if (NewCoords()) {
+      if (NewCoords() || markerMoved()) {
 
         //LOGIČKA RUTA
-        if ((NewCoords() || instructionWaSpoken()) && finishLat() && finishLong() && !stopLogicRouteRefresh()) {
+        if ((NewCoords() || markerMoved() || instructionWaSpoken()) && finishLat() && finishLong() && !stopLogicRouteRefresh()) {
           if (routeLogic) {
             map.removeControl(routeLogic);
           }
@@ -313,12 +314,12 @@ export default function coDriver() {
           .addTo(userMarkersGroup)
           .bindPopup('You are here!')
         setNewCoords(false);
-      }
+                console.log("MAPA SE IZRAČUNALA!");
+
+            }
 
       //PRIKAZ KOORDINATA PROTIVNIKA
       if (UserCoordsUpdate()) {
-        //OVO MICE NASE PODATKE IZ MAPE DA NEMAMO DVIJE LOKACIJE ZA SEBE
-        //console.log("BEFORE",Participants.get("Ayg00").latitude);
         enemyMarkersGroup.clearLayers();
         Participants.delete(session().user?.user_metadata?.username);
         Participants.forEach((value, key) => {
@@ -331,7 +332,7 @@ export default function coDriver() {
       }
 
       //RUTA KOJA SE CRTA (UI)
-      if ((stop() && finishLat() && finishLong() && startLat() && startLon())) {
+      if (((stop() && finishLat() && finishLong() && startLat() && startLon())) || markerMoved()) {
         if (route) {
           map.removeControl(route);
         }
@@ -363,6 +364,8 @@ export default function coDriver() {
             .bindPopup("Start line")
             .addTo(map);
         }
+        setMarkerMoved(false);
+        console.log("MAPA SE NACRTALA!");
       }
       // }
 
@@ -381,7 +384,6 @@ export default function coDriver() {
           }, time);
         }
 
-        // setInstructionWasSpoken(false);
         let currentInstruction = instructionRoute()[0];
         let directionShout = currentInstruction.modifier;
         let distance = currentInstruction.distance;
@@ -393,48 +395,48 @@ export default function coDriver() {
           switch (directionShout) {
 
             case "Left":
-              PaceNote = Math.trunc(distance) + " meters!" + "left 3!";
+              PaceNote = Math.trunc(distance) + " meters!" + " left 3!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "Right":
-              PaceNote = Math.trunc(distance) + " meters!" + "right 3!";
+              PaceNote = Math.trunc(distance) + " meters!" + " right 3!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "Straight":
-              PaceNote = Math.trunc(distance) + " meters!" + "flat out!";
+              PaceNote = Math.trunc(distance) + " meters!" + " flat out!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "SlightRight":
-              PaceNote = Math.trunc(distance) + " meters!" + "right 4!";
+              PaceNote = Math.trunc(distance) + " meters!" + " right 4!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "SharpRight":
-              PaceNote = Math.trunc(distance) + " meters!" + "right 2!";
+              PaceNote = Math.trunc(distance) + " meters!" + " right 2!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "SharpLeft":
-              PaceNote = Math.trunc(distance) + " meters!" + "left 2!";
+              PaceNote = Math.trunc(distance) + " meters!" + " left 2!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "SlightLeft":
-              PaceNote = Math.trunc(distance) + " meters!" + "left 4!";
+              PaceNote = Math.trunc(distance) + " meters!" + " left 4!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             case "TurnAround":
             case "Uturn":
-              PaceNote = Math.trunc(distance) + " meters!" + "turn around!";
+              PaceNote = Math.trunc(distance) + " meters!" + " turn around!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
 
             default:
-              PaceNote = "Flat out!";
+              PaceNote = " Flat out!";
               CodriverSpeech(PaceNote, timeDelaySpeech);
               break;
           }
@@ -562,12 +564,12 @@ export default function coDriver() {
           //async
           y = setInterval(async () => {
             if (userLat() && userLon()) {
-              let differenceLat = Math.abs(userLat() - latitude);
-              let differenceLong = Math.abs(userLon() - longitude);
+            let differenceLat = Math.abs(userLat() - latitude);
+             let differenceLong = Math.abs(userLon() - longitude);
               if (differenceLat !== 0 || differenceLong !== 0) {
                 await UpdateUserLocation(userLat(), userLon(), session().user.id);
                 setNewCoords(true);
-              }
+             }
             }
           }, 2000);
         }
@@ -585,7 +587,7 @@ export default function coDriver() {
   });
 
   return (
-    <>
+    <section class="bg-emerald-50 md:h-screen mx-auto px-6 py-8 ">
       <audio id="BottomFeeder" src="src/Assets/BottomFeader.mp3"></audio>
       <audio id="Slay" src="src/Assets/Slay.mp3"></audio>
       <audio id="Dominating" src="src/Assets/Dominating.mp3"></audio>
@@ -645,17 +647,17 @@ export default function coDriver() {
         </Show>
         <Show when={TrackHardnessFactor() > 10 && TrackHardnessFactor() <= 20}>
           <div class="place-items-center">
-            <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src="src/Assets/MEDIUM.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
         <Show when={TrackHardnessFactor() > 20 && TrackHardnessFactor() >= 40}>
           <div class="place-items-center">
-            <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src="src/Assets/HARD.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
         <Show when={TrackHardnessFactor() > 40 && TrackHardnessFactor() >= 60}>
           <div class="place-items-center">
-            <img src="src/Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src="src/Assets/EXTRAHARD.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
 
@@ -693,6 +695,6 @@ export default function coDriver() {
           <button id="LeaveButton" onClick={LeaveRoom} class="mt-12 bg-slate-600 text-white p-2 rounded-md hover:bg-slate-700">Leave</button>
         </div>
       </Show>
-    </>
+    </section>
   );
 }
