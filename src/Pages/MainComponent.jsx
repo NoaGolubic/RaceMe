@@ -73,22 +73,22 @@ export default function coDriver() {
   const enemyMarkersGroup = L.layerGroup();
 
   var Start_icon = L.icon({
-    iconUrl: '../Assets/STARTLINE_ICON.png',
+    iconUrl: '../assets/STARTLINE_ICON.png',
     iconSize: [40, 40]
   });
 
   var Finish_icon = L.icon({
-    iconUrl: '../Assets/FINISH_ICON.png',
+    iconUrl: '../assets/FINISH_ICON.png',
     iconSize: [40, 40]
   });
 
   var Enemy_icon = L.icon({
-    iconUrl: '../Assets/helmet_enemy.png',
+    iconUrl: '../assets/helmet_enemy.png',
     iconSize: [28, 28]
   });
 
   var Player_icon = L.icon({
-    iconUrl: '../Assets/helmet_player.png',
+    iconUrl: '../assets/helmet_player.png',
     iconSize: [28, 28]
   });
 
@@ -500,24 +500,24 @@ export default function coDriver() {
 
 
         if (TimeGradeConstant > 1.2) {
-          document.getElementById('Badge').innerHTML += '<img src="../Assets/HDBadge.jpg" height="300" width="300"></img>';
+          document.getElementById('Badge').innerHTML += '<img src="../assets/HDBadge.jpg" height="300" width="300"></img>';
           var audio = document.getElementById("BottomFeeder");
           audio.play();
         }
         else if (TimeGradeConstant < 1.2 && TimeGradeConstant >= 0.9) {
-          document.getElementById('Badge').innerHTML += '<img src="../Assets/SBadge.jpg" height="300" width="300"></img>';
+          document.getElementById('Badge').innerHTML += '<img src="../assets/SBadge.jpg" height="300" width="300"></img>';
           var audio = document.getElementById("Slay");
           audio.play();
         }
 
         else if (TimeGradeConstant < 0.9 && TimeGradeConstant >= 0.5) {
-          document.getElementById('Badge').innerHTML += '<img src="../Assets/DBadge.jpg" height="300" width="300"></img>';
+          document.getElementById('Badge').innerHTML += '<img src="../assets/DBadge.jpg" height="300" width="300"></img>';
           var audio = document.getElementById("Dominating");
           audio.play();
         }
 
         else {
-          document.getElementById('Badge').innerHTML += '<img src="../Assets/WSBadge.jpg" height="300" width="300"></img>';
+          document.getElementById('Badge').innerHTML += '<img src="../assets/WSBadge.jpg" height="300" width="300"></img>';
           var audio = document.getElementById("WickedSick");
           audio.play();
         }
@@ -588,10 +588,10 @@ export default function coDriver() {
 
   return (
     <section class="bg-emerald-50 md:h-screen mx-auto px-6 py-8 ">
-      <audio id="BottomFeeder" src="../Assets/BottomFeader.mp3"></audio>
-      <audio id="Slay" src="../Assets/Slay.mp3"></audio>
-      <audio id="Dominating" src="../Assets/Dominating.mp3"></audio>
-      <audio id="WickedSick" src="../Assets/WickedSick.mp3"></audio>
+      <audio id="BottomFeeder" src="../assets/BottomFeader.mp3"></audio>
+      <audio id="Slay" src="../assets/Slay.mp3"></audio>
+      <audio id="Dominating" src="../assets/Dominating.mp3"></audio>
+      <audio id="WickedSick" src="../assets/WickedSick.mp3"></audio>
       <div>
         <h1 class="flex justify-center items-center text-3xl font-bold text-black mb-8 mt-16">StopWatch</h1>
         <div class="place-items-center grid h-16 grid-cols-3 text-xl font-bold text-black bg-red-200 rounded-xl ">
@@ -642,22 +642,22 @@ export default function coDriver() {
         <div class="justify-center flex flex-center mt-8"><h2>Final Grade, with a factor of - {(TrackHardnessFactor())}</h2></div>
         <Show when={TrackHardnessFactor() <= 10}>
           <div class="place-items-center">
-            <img src="../Assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src="../assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
         <Show when={TrackHardnessFactor() > 10 && TrackHardnessFactor() <= 20}>
           <div class="place-items-center">
-            <img src="../Assets/MEDIUM.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src="../assets/MEDIUM.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
         <Show when={TrackHardnessFactor() > 20 && TrackHardnessFactor() >= 40}>
           <div class="place-items-center">
-            <img src="../Assets/HARD.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src="../assets/HARD.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
         <Show when={TrackHardnessFactor() > 40 && TrackHardnessFactor() >= 60}>
           <div class="place-items-center">
-            <img src="../Assets/EXTRAHARD.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src="../assets/EXTRAHARD.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
 
