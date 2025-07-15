@@ -3,7 +3,6 @@ import { defineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 
 export default defineConfig({
-    base: '/RaceMe/',
   plugins: [solidPlugin(), tailwindcss()],
   server: {
     port: 3000,
@@ -11,4 +10,5 @@ export default defineConfig({
   build: {
     target: 'esnext',
   },
+  base: process.env.NODE_ENV === "production" ? "/RaceMe/" : "/"
 });
