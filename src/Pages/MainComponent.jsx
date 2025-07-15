@@ -14,6 +14,25 @@ import { StopChannel, StartChannel, Participants, rankUser, setLeaderboardUpdate
 import { GetRoomFinishLine, DeleteUserFromRoom, InsertCreatedRoom, InsertUserInRoom, UpdateUserLocation, AddUserToLeaderboard, countUserRoomEntries } from "../Backend/DatabaseCalls";
 import { useAuth } from "../Auth/SupabaseAuthProvider";
 
+//MEDIA
+import EASY from "../assets/EASY.jpg";
+import MEDIUM from "../assets/MEDIUM.jpg";
+import HARD from "../assets/HARD.jpg";
+import EXTRAHARD from "../assets/EXTRAHARD.jpg";
+import FINISH_ICON from "../assets/FINISH_ICON.png";
+import STARTLINE_ICON from "../assets/STARTLINE_ICON.png";
+import helmet_player from "../assets/helmet_player.png";
+import helmet_enemy from "../assets/helmet_enemy.png";
+import DBadge from "../assets/DBadge.jpg";
+import HDBadge from "../assets/HDBadge.jpg";
+import SBadge from "../assets/SBadge.jpg";
+import WSBadge from "../assets/WSBadge.jpg";
+import BotttomFeader from "../assets/BottomFeader.mp3";
+import Dominating from "../assets/Dominating.mp3";
+import HumiliatingDefeat from "../assets/HumiliatingDefeat.mp3";
+import Slay from "../assets/Slay.mp3";
+import WickedSick from "../assets/WickedSick.mp3";
+
 export default function coDriver() {
 
   const [GForce, setGForce] = createSignal(0);
@@ -73,22 +92,22 @@ export default function coDriver() {
   const enemyMarkersGroup = L.layerGroup();
 
   var Start_icon = L.icon({
-    iconUrl: 'src/assets/STARTLINE_ICON.png',
+    iconUrl: STARTLINE_ICON,
     iconSize: [40, 40]
   });
 
   var Finish_icon = L.icon({
-    iconUrl: 'src/assets/FINISH_ICON.png',
+    iconUrl: FINISH_ICON,
     iconSize: [40, 40]
   });
 
   var Enemy_icon = L.icon({
-    iconUrl: 'src/assets/helmet_enemy.png',
+    iconUrl: helmet_enemy,
     iconSize: [28, 28]
   });
 
   var Player_icon = L.icon({
-    iconUrl: 'src/assets/helmet_player.png',
+    iconUrl: helmet_player,
     iconSize: [28, 28]
   });
 
@@ -500,24 +519,24 @@ export default function coDriver() {
 
 
         if (TimeGradeConstant > 1.2) {
-          document.getElementById('Badge').innerHTML += '<img src="src/assets/HDBadge.jpg" height="300" width="300"></img>';
+          document.getElementById('Badge').innerHTML += `<img src="${HDBadge}" height="300" width="300"></img>`;
           var audio = document.getElementById("BottomFeeder");
           audio.play();
         }
         else if (TimeGradeConstant < 1.2 && TimeGradeConstant >= 0.9) {
-          document.getElementById('Badge').innerHTML += '<img src="src/assets/SBadge.jpg" height="300" width="300"></img>';
+          document.getElementById('Badge').innerHTML += `<img src="${SBadge}" height="300" width="300"></img>`;
           var audio = document.getElementById("Slay");
           audio.play();
         }
 
         else if (TimeGradeConstant < 0.9 && TimeGradeConstant >= 0.5) {
-          document.getElementById('Badge').innerHTML += '<img src="src/assets/DBadge.jpg" height="300" width="300"></img>';
+          document.getElementById('Badge').innerHTML += `<img src="${DBadge}" height="300" width="300"></img>`;
           var audio = document.getElementById("Dominating");
           audio.play();
         }
 
         else {
-          document.getElementById('Badge').innerHTML += '<img src="src/assets/WSBadge.jpg" height="300" width="300"></img>';
+          document.getElementById('Badge').innerHTML += `<img src="${WSBadge}" height="300" width="300"></img>`;
           var audio = document.getElementById("WickedSick");
           audio.play();
         }
@@ -588,10 +607,10 @@ export default function coDriver() {
 
   return (
     <section class="bg-emerald-50 md:h-screen mx-auto px-6 py-8 ">
-      <audio id="BottomFeeder" src="src/assets/BottomFeader.mp3"></audio>
-      <audio id="Slay" src="src/assets/Slay.mp3"></audio>
-      <audio id="Dominating" src="src/assets/Dominating.mp3"></audio>
-      <audio id="WickedSick" src="src/assets/WickedSick.mp3"></audio>
+      <audio id="BottomFeeder" src={BotttomFeader}></audio>
+      <audio id="Slay" src={Slay}></audio>
+      <audio id="Dominating" src={Dominating}></audio>
+      <audio id="WickedSick" src={WickedSick}></audio>
       <div>
         <h1 class="flex justify-center items-center text-3xl font-bold text-black mb-8 mt-16">StopWatch</h1>
         <div class="place-items-center grid h-16 grid-cols-3 text-xl font-bold text-black bg-red-200 rounded-xl ">
@@ -642,22 +661,22 @@ export default function coDriver() {
         <div class="justify-center flex flex-center mt-8"><h2>Final Grade, with a factor of - {(TrackHardnessFactor())}</h2></div>
         <Show when={TrackHardnessFactor() <= 10}>
           <div class="place-items-center">
-            <img src="src/assets/EASY.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src={EASY} class="mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
         <Show when={TrackHardnessFactor() > 10 && TrackHardnessFactor() <= 20}>
           <div class="place-items-center">
-            <img src="src/assets/MEDIUM.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src={MEDIUM} class="mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
         <Show when={TrackHardnessFactor() > 20 && TrackHardnessFactor() >= 40}>
           <div class="place-items-center">
-            <img src="src/assets/HARD.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src={HARD} class="mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
         <Show when={TrackHardnessFactor() > 40 && TrackHardnessFactor() >= 60}>
           <div class="place-items-center">
-            <img src="src/assets/EXTRAHARD.jpg" class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src={EXTRAHARD} class="mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
 
