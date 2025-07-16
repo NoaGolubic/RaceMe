@@ -465,7 +465,7 @@ export default function coDriver() {
       }
 
 
-      if ((distanceToFinishLine() < 0.0000001) && finishLat() && finishLong() && !loopOnce()) { //10000
+      if ((distanceToFinishLine() < 0.0000001) && finishLat() && finishLong()) { //10000
         setRaceFinished(true);
         setNewCoords(false);
         let SpeedArrayLenght = SpeedArray.length;
@@ -692,7 +692,7 @@ export default function coDriver() {
         <form onSubmit={JoinRoom} class="flex flex-col gap-4">
           <div class="place-items-center mt-8">
           <div class="grid grid-flow-col grid-rows-2">
-            <label class="font-bold text-xl justify-center mb-2 ml-12">Room Code:</label>
+            <label class="font-bold text-xl mb-2 ml-12">Room Code:</label>
             <input type="text" name="EnteredRoomCode" required class="p-2 rounded-md max-w-100 border-red-200 border-4" />
           </div>
           </div>
