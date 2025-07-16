@@ -121,12 +121,11 @@ export default function coDriver() {
     PaceNoteReading.rate = 1.2;
   }
 
-  const acl = new Accelerometer({ frequency: 60 });
+  const acl = new Accelerometer({ frequency: 20 });
   acl.addEventListener("reading", () => {
     AccelerationData = Math.abs(Math.sqrt(acl.x * acl.x + acl.y * acl.y + acl.z * acl.z));
     AccerationArray.push(AccelerationData);
     setGForce(AccelerationData / 9.81);
-
   });
 
   //IZLAZAK IZ SOBE
@@ -512,7 +511,7 @@ export default function coDriver() {
         await AddUserToLeaderboard(UserFinishTime, count, MaxSpeed, session().user?.user_metadata?.username, token);
 
         //PITATI ZA CAR TOP SPEED kod reg i spremiti u metadata
-        setTrackHardnessFactor((CalcAccDif * 0.5) + (CalcHeaDif * 0.4) + (CalcSpeAvg /* / carTopSpeed */ * 0.1));
+        setTrackHardnessFactor(((CalcAccDif * 0.5) + (CalcHeaDif * 0.4) + (CalcSpeAvg /* / carTopSpeed */ * 0.1)) * 100);
 
         //U SEKUNDAMA
         let TimeGradeConstant = totalTime / stopWatchValue();
@@ -659,22 +658,22 @@ export default function coDriver() {
         </div>
 
         <div class="justify-center flex flex-center mt-8"><h2>Final Grade, with a factor of - {(TrackHardnessFactor())}</h2></div>
-        <Show when={TrackHardnessFactor() <= 10}>
+        <Show when={TrackHardnessFactor() <= 97}>
           <div class="place-items-center">
             <img src={EASY} class="w-2/3 mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
-        <Show when={TrackHardnessFactor() > 10 && TrackHardnessFactor() <= 20}>
+        <Show when={TrackHardnessFactor() > 97 && TrackHardnessFactor() <= 189}>
           <div class="place-items-center">
             <img src={MEDIUM} class="w-2/3 mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
-        <Show when={TrackHardnessFactor() > 20 && TrackHardnessFactor() >= 40}>
+        <Show when={TrackHardnessFactor() > 189 && TrackHardnessFactor() <= 325}>
           <div class="place-items-center">
             <img src={HARD} class="w-2/3 mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
-        <Show when={TrackHardnessFactor() > 40 && TrackHardnessFactor() >= 60}>
+        <Show when={TrackHardnessFactor() > 325}>
           <div class="place-items-center">
             <img src={EXTRAHARD} class="w-2/3 mt-4 overflow-hidden rounded-lg"></img>
           </div>
