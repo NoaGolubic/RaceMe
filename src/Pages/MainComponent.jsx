@@ -592,7 +592,7 @@ export default function coDriver() {
             }
           }, 2000);
         }
-        SpeedArray.push(speed);
+        SpeedArray.push(speed * (3600/1000));
         HeadingArray.push(heading);
         setLoopOnce(false);
       }
