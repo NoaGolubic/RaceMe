@@ -39,7 +39,7 @@ function Prijava(props) {
 
     return (
         <>
-            <section class="bg-emerald-50">
+            <section class="bg-emerald-50 h-screen">
                 <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
                     <div class="w-full bg-red-200 rounded-lg shadow border md:mt-0 sm:max-w-md xl:p-0  border-red-300">
                         <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
