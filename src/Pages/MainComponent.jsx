@@ -605,7 +605,7 @@ export default function coDriver() {
   });
 
   return (
-    <section class="bg-emerald-50 md:h-screen mx-auto px-6 py-8 ">
+    <section class="bg-emerald-50 md:h-screen mx-auto px-6 py-8 h-screen">
       <audio id="BottomFeeder" src={BotttomFeader}></audio>
       <audio id="Slay" src={Slay}></audio>
       <audio id="Dominating" src={Dominating}></audio>
