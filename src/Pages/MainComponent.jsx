@@ -465,7 +465,7 @@ export default function coDriver() {
       }
 
 
-      if ((distanceToFinishLine() < 0.0000001) && finishLat() && finishLong()) { //10000
+      if ((distanceToFinishLine() < 0.0000001) && finishLat() && finishLong() && !loopOnce()) { //10000
         setRaceFinished(true);
         setNewCoords(false);
         let SpeedArrayLenght = SpeedArray.length;
@@ -622,7 +622,7 @@ export default function coDriver() {
 
       <div>
         <h1 class="flex justify-center items-center text-3xl font-bold text-black mb-8 mt-12">G-Force</h1>
-        <div class="place-items-center grid h-16 text-xl font-bold text-black bg-red-200 rounded-xl mx-auto w-50"><h3>{(GForce()-0.99).toFixed(1)} g</h3></div>
+        <div class="place-items-center grid h-16 text-xl font-bold text-black bg-red-200 rounded-xl mx-auto w-50"><h3>{Math.abs((GForce()-0.99)).toFixed(1)} g</h3></div>
       </div>
       <div class="flex flex-center justify-center">
         <div id="map" class="w-95 h-80 min-w-80 max-h-65 rounded-lg mt-16 border-2 border-red-200"></div>
@@ -661,28 +661,28 @@ export default function coDriver() {
         <div class="justify-center flex flex-center mt-8"><h2>Final Grade, with a factor of - {(TrackHardnessFactor())}</h2></div>
         <Show when={TrackHardnessFactor() <= 10}>
           <div class="place-items-center">
-            <img src={EASY} class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src={EASY} class="w-2/3 mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
         <Show when={TrackHardnessFactor() > 10 && TrackHardnessFactor() <= 20}>
           <div class="place-items-center">
-            <img src={MEDIUM} class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src={MEDIUM} class="w-2/3 mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
         <Show when={TrackHardnessFactor() > 20 && TrackHardnessFactor() >= 40}>
           <div class="place-items-center">
-            <img src={HARD} class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src={HARD} class="w-2/3 mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
         <Show when={TrackHardnessFactor() > 40 && TrackHardnessFactor() >= 60}>
           <div class="place-items-center">
-            <img src={EXTRAHARD} class="mt-4 overflow-hidden rounded-lg"></img>
+            <img src={EXTRAHARD} class="w-2/3 mt-4 overflow-hidden rounded-lg"></img>
           </div>
         </Show>
 
         <div class="place-items-center">
-          <p class="mt-16 font-bold text-lg">Your speed is {UserTimeGrade()} times faster than calculated.</p>
-          <div id="Badge" class="mt-8 mb-32 self-center rounded-xl overflow-hidden"></div>
+          <p class="mt-16 font-bold text-base">You´r {UserTimeGrade()}x faster than calculated.</p>
+          <div id="Badge" class="w-2/3 mt-8 mb-32 self-center rounded-xl overflow-hidden"></div>
         </div>
 
       </Show>
@@ -690,11 +690,13 @@ export default function coDriver() {
       <Show when={!inRoom()}>
         <h1 class="mt-16 text-center text-2xl font-bold text-black mb-6">Join a room!</h1>
         <form onSubmit={JoinRoom} class="flex flex-col gap-4">
-          <div class="flex text-black  justify-center items-baseline mt-4 gap-4">
-            <label class="font-bold text-base mb-2 ml-12">Room Code:</label>
+          <div class="place-items-center mt-8">
+          <div class="grid grid-flow-col grid-rows-2">
+            <label class="font-bold text-xl justify-center mb-2 ml-12">Room Code:</label>
             <input type="text" name="EnteredRoomCode" required class="p-2 rounded-md max-w-100 border-red-200 border-4" />
           </div>
-          <button type="submit" class="mt-4 bg-slate-600 text-white p-2 rounded-md w-100 self-center hover:bg-slate-700">
+          </div>
+          <button type="submit" class="mt-4 bg-slate-600 text-white p-2 rounded-md w-50 self-center hover:bg-slate-700">
             Join
           </button>
         </form>
